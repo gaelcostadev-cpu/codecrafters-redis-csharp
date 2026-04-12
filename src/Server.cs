@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 
-TcpListener server = new TcpListener(IPAddress.Any, 6379);
+TcpListener server = new(IPAddress.Any, 6379);
 server.Start();
 
 Socket client = server.AcceptSocket(); // wait for client
