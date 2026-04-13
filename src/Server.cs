@@ -30,8 +30,22 @@ while (true)
         //determina se o cliente tem dados para ler, se sim, lê a mensagem e responde com +PONG
         if (client.Poll(0, SelectMode.SelectRead))
         {
-            client.Receive(msg);
-            client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+            string request = Encoding.UTF8.GetString(msg, 0, Convert.ToInt32(client.Receive(msg)));
+            string[] parts = request.Split("\r\n");
+
+            string command = parts[2].ToUpper();
+
+            if (command == "ECHO")
+            {
+                string argument = parts[4];
+                string response = $"${argument.Length}\r\n{argument}\r\n";
+
+                client.Send(Encoding.UTF8.GetBytes(response));
+            }
+            else if (command == "PING")
+            {
+                client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+            }
         }
     }
 }
