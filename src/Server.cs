@@ -5,10 +5,23 @@ using System.Text;
 TcpListener server = new(IPAddress.Any, 6379);
 server.Start();
 
-Socket client = server.AcceptSocket();
-byte[] buffer = new byte[1024];
+List<Socket> clients = [server.AcceptSocket()];
 
-while (client.Connected) {
-    client.Receive(buffer);
-    client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
-}  
+// 1024 bytes pode ser qualquer valor, dependendo do tamanho da msg que você espera receber
+byte[] msg = new byte[1024]; 
+
+while (true)
+{
+    for (int i = 0; i < clients.Count; i++)
+    {
+        Socket client = clients[i];
+        if (!client.Connected)
+        {
+            clients.RemoveAt(i);
+            i--;
+            continue;
+        }
+        client.Receive(msg);
+        client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+    }
+}
