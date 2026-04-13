@@ -6,6 +6,7 @@ TcpListener server = new(IPAddress.Any, 6379);
 server.Start();
 
 List<Socket> clients = [];
+Dictionary<string, string> store = new();
 
 // 1024 bytes pode ser qualquer valor, dependendo do tamanho da msg que você espera receber
 byte[] msg = new byte[1024]; 
@@ -31,8 +32,11 @@ while (true)
         if (client.Poll(0, SelectMode.SelectRead))
         {
             string request = Encoding.UTF8.GetString(msg, 0, Convert.ToInt32(client.Receive(msg)));
+
+            //mensagens do tipo RESP tem a seguinte estrutura: *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n
             string[] parts = request.Split("\r\n");
 
+            //o comando é a terceira parte da mensagem, por exemplo, ECHO ou PING
             string command = parts[2].ToUpper();
 
             if (command == "ECHO")
@@ -40,11 +44,36 @@ while (true)
                 string argument = parts[4];
                 string response = $"${argument.Length}\r\n{argument}\r\n";
 
+                //responde com a mensagem do tipo RESP (bulk string)
+                //por exemplo: $<length>\r\n<data>\r\n
                 client.Send(Encoding.UTF8.GetBytes(response));
             }
             else if (command == "PING")
             {
                 client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+            }
+            else if (command == "SET")
+            {
+                string key = parts[4];
+                string value = parts[6];
+
+                store[key] = value;
+
+                client.Send(Encoding.UTF8.GetBytes("+OK\r\n"));
+            }
+            else if (command == "GET")
+            {
+                string key = parts[4];
+
+                if (store.TryGetValue(key, out string? value))
+                {
+                    string response = $"${value.Length}\r\n{value}\r\n";
+                    client.Send(Encoding.UTF8.GetBytes(response));
+                }
+                else
+                {
+                    client.Send(Encoding.UTF8.GetBytes("$-1\r\n"));
+                }
             }
         }
     }
