@@ -5,6 +5,8 @@ using System.Text;
 TcpListener server = new(IPAddress.Any, 6379);
 server.Start();
 
-Socket client = server.AcceptSocket(); // wait for client
+Socket client = server.AcceptSocket();
 
-client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+do {
+    client.Send(Encoding.UTF8.GetBytes("+PONG\r\n"));
+} while (client.Connected);
