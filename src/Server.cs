@@ -59,6 +59,7 @@ while (true)
 
                 store[key] = value;
 
+                //timer para expirar a chave, se o comando tiver a opção PX
                 if (parts.Length > 8 && parts[8].ToUpper() == "PX")
                 {
                     string expireValue = parts[10];
