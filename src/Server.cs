@@ -59,23 +59,20 @@ while (true)
 
                 store[key] = value;
 
-                client.Send(Encoding.UTF8.GetBytes("+OK\r\n"));
-
-                if (parts.Length > 6)
+                if (parts.Length > 8 && parts[8].ToUpper() == "PX")
                 {
-                    string expireCommand = parts[8].ToUpper();
                     string expireValue = parts[10];
 
-                    if (expireCommand == "PX")
+                    int milliseconds = Convert.ToInt32(expireValue);
+                    _ = Task.Run(async () =>
                     {
-                        int milliseconds = Convert.ToInt32(expireValue);
-                        _ = Task.Run(async () =>
-                        {
-                            await Task.Delay(milliseconds * 1000);
-                            store.Remove(key);
-                        });
-                    }
+                        await Task.Delay(milliseconds);
+                        store.Remove(key);
+                    });
+                    
                 }
+
+                client.Send(Encoding.UTF8.GetBytes("+OK\r\n"));
             }
             else if (command == "GET")
             {
